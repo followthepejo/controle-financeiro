@@ -123,6 +123,7 @@ function telaParear(msg = '') {
         $('#pin-msg').textContent = 'Conferindo o acesso ao GitHub…';
         await repo().testar();
         await cofre.salvarLigacao(env);
+        try { await navigator.storage?.persist?.(); } catch { /* sem problema */ } // pede ao iPhone para não limpar os dados do app
         est.dados = vazio(); est.sinc = null; est.cache = {};
         $('#pin-msg').textContent = 'Baixando seus dados… (só demora na primeira vez)';
         await sincronizar();

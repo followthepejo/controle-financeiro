@@ -16,6 +16,7 @@ function situacao(x) {
   if (x.acao === 'existe') return html`<span class="etiqueta">Já lançado</span>`;
   if (x.acao === 'completar') return html`<span class="etiqueta completar">Completa ${x.completa.join(' e ')}</span>`;
   if (x.soCartao) return html`<span class="etiqueta novo">Novo · só cartão</span>`;
+  if (x.debito) return html`<span class="etiqueta novo">Novo · ${x.meio || 'débito'} (só mês)</span>`;
   if (x.outraFatura) return html`<span class="etiqueta aviso">Novo · data de ${nomeMes(x.outraFatura)}</span>`;
   return html`<span class="etiqueta novo">${x.estorno ? 'Estorno' : 'Novo'}</span>`;
 }
@@ -45,7 +46,7 @@ export function render(est, raiz, ctx) {
       <section class="cartao">
         <div class="cartao-topo"><h3>Confira</h3><span class="sutil">${sel().length} · ${brl(sel().reduce((s, x) => s + x.valor, 0))}</span></div>
         <p class="sutil pequeno">Fatura de <b>${nomeMes(r.destino)}</b>. Os gastos de ${d.config.pessoaPadrao} vão para o mês e o cartão; os das outras pessoas, só para o cartão.</p>
-        ${r.pagamentos ? html`<p class="sutil pequeno">${r.pagamentos} pagamento(s) de fatura ignorado(s).</p>` : ''}
+        ${r.pagamentos ? html`<p class="sutil pequeno">${r.pagamentos} pagamento(s) de fatura ou dinheiro recebido ignorado(s).</p>` : ''}
         ${r.faltas.length ? html`<div class="faixa-aviso">${I.alerta} <b>Compras cortadas (não serão lançadas):</b><ul>${r.faltas.map((f) => html`<li>${f.texto}</li>`)}</ul></div>` : ''}
       </section>
       ${r.itens.map((x, i) => html`<section class="cartao item-print ${x.marcado ? '' : 'desmarcado'}" data-i="${i}">
@@ -130,7 +131,7 @@ export function render(est, raiz, ctx) {
     const porPessoa = new Map();
     for (const x of ativos) { const t = porPessoa.get(x.quem) || { n: 0, v: 0 }; t.n++; t.v += x.valor; porPessoa.set(x.quem, t); }
     const semCat = ativos.filter((x) => x.quem === eu && !x.tipo).length;
-    const texto = [...porPessoa].map(([p, t]) => `${p}: ${t.n} · ${brl(t.v)}${p === eu ? ' (mês + cartão)' : ' (só cartão)'}`).join(' | ') || 'Nada novo (tudo já estava lançado).';
+    const texto = [...porPessoa].map(([p, t]) => `${p}: ${t.n} · ${brl(t.v)}${p === eu ? (ativos.every((x) => x.quem !== eu || x.debito) ? ' (só mês)' : ' (mês + cartão)') : ' (só cartão)'}`).join(' | ') || 'Nada novo (tudo já estava lançado).';
     if (!(await confirmar(`Lançar na fatura de ${nomeMes(r.destino)}?`, texto + (semCat ? ` · ${semCat} sem categoria` : ''), 'Confirmar e lançar'))) return;
     const res = aplicar(d, r.destino, ativos);
     aprenderApelidos(d, marcados);

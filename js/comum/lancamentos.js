@@ -17,11 +17,22 @@ export function prepararLidos(d, lidos, quem, mapa) {
     const tipo = sugestaoLocal || (cats.some((c) => c.nome === l.categoria_sugerida) ? l.categoria_sugerida : '');
     const assin = assinaturaConhecida(d, ap && !ap.conflito && ap.nome ? ap.nome : l.descricao, l.valor) || assinaturaConhecida(d, l.descricao, l.valor);
     const nomeFinal = ap && !ap.conflito && ap.nome ? ap.nome : l.descricao;
+    let tipoFinal = assin ? (cats.find((c) => norm(c.nome) === 'assinatura')?.nome || tipo) : tipo;
+    if (l.debito && tipoFinal) tipoFinal = paraDebito(d, tipoFinal);
     return {
       lido: l.descricao, nomeSalvo: nomeFinal !== l.descricao, catSalva: !!catSalva, data: l.data || '', descricao: nomeFinal, valor: l.tipo === 'estorno' ? -Math.abs(l.valor) : Math.abs(l.valor),
-      parcela: assin ? 'Fixo' : total > 1 ? `${atual}/${total}` : '1/1', tipo: assin ? (cats.find((c) => norm(c.nome) === 'assinatura')?.nome || tipo) : tipo, assinatura: !!assin, estorno: l.tipo === 'estorno', pagamento: l.tipo === 'pagamento', marcado: true, quem, acao: null,
+      parcela: assin ? 'Fixo' : total > 1 ? `${atual}/${total}` : '1/1', tipo: tipoFinal, assinatura: !!assin, estorno: l.tipo === 'estorno',
+      pagamento: l.tipo === 'pagamento' || l.tipo === 'entrada', marcado: true, quem, acao: null,
+      ...(l.debito ? { debito: true, meio: l.meio || 'Débito' } : {}),
     };
   });
+}
+
+// Gasto pago no débito/Pix: usa a versão "débito" da categoria (LancheC -> LancheD), se existir; senão deixa para você escolher
+export function paraDebito(d, tipo) {
+  if (operacaoDe(d, tipo) === 'Débito') return tipo;
+  const alt = d.categorias.find((c) => c.operacao === 'Débito' && (c.nome === tipo.replace(/C$/, 'D') || norm(c.nome) === norm(tipo.replace(/C$/, '')) + 'd'));
+  return alt ? alt.nome : '';
 }
 
 // Marca cada item: 'novo' | 'completar' | 'existe' (já lançado no mês ou no cartão)
@@ -63,7 +74,7 @@ export function aplicar(d, destino, ativos, { noCartao: levarAoCartao = true } =
         mes.gastos.push({ id: novoId(), data: x.data, descricao: x.descricao, valor: x.valor, parcela: x.parcela, tipo: x.tipo, origem: x.origem || 'print' });
         novos++;
       }
-      if (!levarAoCartao || operacaoDe(d, x.tipo) === 'Débito') continue;
+      if (!levarAoCartao || x.debito || operacaoDe(d, x.tipo) === 'Débito') continue; // débito/Pix não é cartão
     }
     if (!existeNoCartao(d, x, x.quem, fatDe)) {
       d.cartao.push({ id: novoId(), data: x.data, quem: x.quem, descricao: x.descricao, valor: x.valor, pgto: 0, parcelas: x.parcela, ...(x.tipo ? { tipo: x.tipo } : {}) });

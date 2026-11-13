@@ -160,3 +160,31 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--acento); ou
 .modal .acoes .btn { min-height: 50px; }
 .lista-aviso { padding-left: 18px; margin: 4px 0; color: var(--sutil); font-size: .88rem; }
 .modal .acoes:has(> :only-child) { grid-template-columns: 1fr; }
+
+/* ---------- painel ---------- */
+.centro { text-align: center; margin: -4px 0 0; }
+.kpi b { font-size: 1.25rem; }
+.kpi small { font-size: .76rem; }
+.kpi.destaque-total b.grande { font-size: 1.9rem; }
+.tile { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; background: rgba(255, 255, 255, .05); border: 1px solid var(--borda); border-radius: 12px; padding: 10px 12px; }
+.tile:active { background: var(--acento-fundo); }
+.tile .rotulo { display: flex; align-items: center; gap: 2px; }
+.tile .rotulo svg, .link-topo svg { width: 16px; height: 16px; }
+.tile b { font-size: 1.1rem; }
+.link-topo { border: none; background: none; padding: 0; width: 100%; text-align: left; align-items: center; }
+.link-topo b { display: flex; align-items: center; gap: 2px; }
+.barras { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.barras li { display: grid; grid-template-columns: minmax(0, 38%) 1fr auto; align-items: center; gap: 8px; font-size: .84rem; }
+.b-nome { color: var(--sutil); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.b-trilho { height: 14px; display: block; }
+.b-trilho i { display: block; height: 100%; background: var(--acento); border-radius: 3px; min-width: 2px; }
+.b-valor { font-size: .82rem; white-space: nowrap; }
+.teto { display: grid; grid-template-columns: 64px 1fr; gap: 8px; align-items: start; margin: 4px 0; }
+.teto > span { color: var(--sutil); font-size: .9rem; padding-top: 2px; }
+.barra i.alerta { background: var(--aviso); }
+.teto .barra i:not(.perigo):not(.alerta) { background: var(--pos); }
+h3.mt { margin-top: 10px; }
+.voltar-topo { display: flex; align-items: center; gap: 4px; margin-left: -8px; }
+.voltar-topo h2 { font-size: 1.2rem; }
+.chips.rolar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chips.rolar .chip { white-space: nowrap; flex: none; }

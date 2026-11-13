@@ -12,10 +12,11 @@ import * as lancar from './telas/lancar.js';
 import * as cartao from './telas/cartao.js';
 import * as print from './telas/print.js';
 import * as ajustes from './telas/ajustes.js';
+import * as gastos from './telas/gastos.js';
 
 const raiz = $('#raiz');
-const TELAS = { inicio, lancar, cartao, print, ajustes };
-const ABAS = [['inicio', 'Resumo', I.inicio], ['lancar', 'Lançar', I.mais], ['cartao', 'Cartão', I.cartao], ['print', 'Print', I.foto]];
+const TELAS = { inicio, lancar, cartao, print, ajustes, gastos };
+const ABAS = [['inicio', 'Painel', I.inicio], ['lancar', 'Lançar', I.mais], ['cartao', 'Cartão', I.cartao], ['print', 'Print', I.foto]];
 const BLOQUEAR_APOS = 5 * 60 * 1000; // fora do app por mais de 5 min: pede o PIN de novo
 
 const est = { lig: null, chave: null, dados: null, sinc: null, cache: {}, tela: 'inicio', mesId: null, sincronizando: false, ultima: null, erro: null, versao: 0 };
@@ -162,7 +163,7 @@ function irPara(tela) { est.tela = tela; desenhar(); $('#conteudo')?.scrollTo(0,
 function desenhar() {
   const alvo = $('#conteudo');
   if (!alvo || !est.dados) return;
-  raiz.querySelectorAll('.abas [data-ir]').forEach((b) => b.classList.toggle('ativo', b.dataset.ir === est.tela));
+  raiz.querySelectorAll('.abas [data-ir]').forEach((b) => b.classList.toggle('ativo', b.dataset.ir === (est.tela === 'gastos' ? 'inicio' : est.tela)));
   alvo.onchange = null; alvo.onclick = null; // cada tela liga os seus
   TELAS[est.tela].render(est, alvo, ctx);
   aplicarLarguras(alvo);

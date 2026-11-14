@@ -6,6 +6,7 @@ import { decompor, aplicarDiferenca } from './comum/sync/sincronizar.js';
 import { faturaDaCompra } from './comum/calculos.js';
 import { importarChave } from './comum/sync/cripto.js';
 import * as cofre from './cofre-local.js';
+import { aplicarTema, aparenciaEfetiva } from './tema.js';
 import { I, tecladoPin, aplicarLarguras } from './ui.js';
 import * as inicio from './telas/inicio.js';
 import * as lancar from './telas/lancar.js';
@@ -13,10 +14,11 @@ import * as cartao from './telas/cartao.js';
 import * as print from './telas/print.js';
 import * as ajustes from './telas/ajustes.js';
 import * as gastos from './telas/gastos.js';
+import * as mes from './telas/mes.js';
 
 const raiz = $('#raiz');
-const TELAS = { inicio, lancar, cartao, print, ajustes, gastos };
-const ABAS = [['inicio', 'Painel', I.inicio], ['lancar', 'Lançar', I.mais], ['cartao', 'Cartão', I.cartao], ['print', 'Print', I.foto]];
+const TELAS = { inicio, mes, lancar, cartao, print, ajustes, gastos };
+const ABAS = [['inicio', 'Painel', I.inicio], ['mes', 'Mês', I.calendario], ['lancar', 'Lançar', I.mais], ['cartao', 'Cartão', I.cartao], ['print', 'Print', I.foto]];
 const BLOQUEAR_APOS = 5 * 60 * 1000; // fora do app por mais de 5 min: pede o PIN de novo
 
 const est = { lig: null, chave: null, dados: null, sinc: null, cache: {}, tela: 'inicio', mesId: null, sincronizando: false, ultima: null, erro: null, versao: 0 };
@@ -62,7 +64,7 @@ function sincronizar() {
       normalizar(est.dados);
       est.sinc = r.estado; est.cache = r.cache; est.ultima = Date.now(); est.erro = null;
       await persistir();
-      if (r.resumo.daNuvem > 0) redesenharSeguro();
+      if (r.resumo.daNuvem > 0) { aplicarTema(aparenciaEfetiva(est.dados.config)); redesenharSeguro(); }
     } catch (e) { est.erro = e.message; } finally { est.sincronizando = false; desenharStatus(); }
   })().finally(() => { rodando = null; if (denovo) { denovo = false; sincronizar(); } });
   return rodando;
@@ -141,6 +143,7 @@ function telaParear(msg = '') {
 
 // ---------- app ----------
 function abrirApp() {
+  aplicarTema(aparenciaEfetiva(est.dados.config));
   const ids = est.dados.meses.map((m) => m.id);
   const atual = faturaDaCompra(est.dados, hojeISO());
   est.mesId = ids.includes(atual) ? atual : ids.at(-1) || atual;
@@ -164,7 +167,7 @@ function desenhar() {
   const alvo = $('#conteudo');
   if (!alvo || !est.dados) return;
   raiz.querySelectorAll('.abas [data-ir]').forEach((b) => b.classList.toggle('ativo', b.dataset.ir === (est.tela === 'gastos' ? 'inicio' : est.tela)));
-  alvo.onchange = null; alvo.onclick = null; // cada tela liga os seus
+  alvo.onchange = null; alvo.onclick = null; alvo.onkeydown = null; alvo.onfocusin = null; // cada tela liga os seus
   TELAS[est.tela].render(est, alvo, ctx);
   aplicarLarguras(alvo);
   desenharStatus();
@@ -207,6 +210,7 @@ window.addEventListener('focusout', () => { if (pendente && est.tela !== 'lancar
 export function marcarPendenteVisto() { if (pendente) { pendente = false; desenhar(); } }
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+aplicarTema(aparenciaEfetiva(null)); // tema guardado no celular já na tela do PIN
 (async () => {
   try { if (await cofre.temLigacao()) telaPin(); else telaParear(); } catch (e) { montar(raiz, html`<main class="entrada"><h1>Controle Financeiro</h1><p class="erro">${e.message}</p></main>`); }
 })();

@@ -1,6 +1,7 @@
 // Ajustes do celular: sincronização, PIN deste celular, bloquear e desligar.
 import { html, montar, $, avisar } from '../comum/util.js';
 import * as cofre from '../cofre-local.js';
+import { abrirTema, aplicarTema, aparenciaEfetiva, lerAparencia } from '../tema.js';
 import { I } from '../ui.js';
 
 export function render(est, raiz, ctx) {
@@ -13,6 +14,11 @@ export function render(est, raiz, ctx) {
       ${est.erro ? html`<p class="faixa-aviso">${I.alerta} ${est.erro}</p>` : ''}
       <button class="btn primario" id="sinc">${I.sync} Sincronizar agora</button>
       <p class="sutil pequeno">Repositório privado: ${est.lig.dono}/${est.lig.repo}. Tudo vai criptografado; o GitHub só guarda arquivos embaralhados.</p>
+    </section>
+    <section class="cartao">
+      <h3>Aparência</h3>
+      <p class="sutil">${lerAparencia().seguirPC ? 'Usando o mesmo tema do PC.' : 'Tema próprio deste celular.'}</p>
+      <button class="btn" id="tema">Tema, cores e fonte</button>
     </section>
     <section class="cartao">
       <h3>PIN deste celular</h3>
@@ -37,6 +43,7 @@ export function render(est, raiz, ctx) {
     if (f.novo.value !== f.conf.value) return avisar('Os PINs novos não conferem.', 'erro');
     try { await cofre.trocarPin(f.atual.value, f.novo.value); f.reset(); avisar('PIN do celular trocado.'); } catch (er) { avisar(er.message, 'erro'); }
   };
+  $('#tema').onclick = () => abrirTema(est.dados.config, () => { aplicarTema(aparenciaEfetiva(est.dados.config)); ctx.redesenhar(); });
   $('#bloquear').onclick = () => ctx.bloquear();
   $('#desligar').onclick = () => ctx.desconectar();
 }

@@ -1,11 +1,11 @@
 // Guarda o app no celular para abrir rápido e funcionar sem internet (os dados vêm do GitHub quando houver internet).
 // Só arquivos do próprio site passam por aqui; o GitHub (api.github.com) nunca é guardado em cache.
-const VERSAO = '59510227db71';
+const VERSAO = 'c0fe1e413dbf';
 const CACHE = `cf-${VERSAO}`;
 const BASICOS = ['./', 'index.html', 'estilo.css', 'manifest.webmanifest', 'icones/icone-192.png', 'icones/apple-180.png',
   'js/app.js', 'js/cofre-local.js', 'js/ui.js', 'js/ocr-celular.js', 'js/ocr-linhas.js',
   'js/telas/inicio.js', 'js/telas/lancar.js', 'js/telas/cartao.js', 'js/telas/print.js', 'js/telas/ajustes.js', 'js/telas/gastos.js',
-  'js/comum/util.js', 'js/comum/calculos.js', 'js/comum/conciliar.js', 'js/comum/assinaturas.js', 'js/comum/lancamentos.js', 'js/comum/montar-print.js',
+  'js/comum/util.js', 'js/comum/calculos.js', 'js/comum/conciliar.js', 'js/comum/assinaturas.js', 'js/comum/lancamentos.js', 'js/comum/extrato.js', 'js/comum/montar-print.js',
   'js/comum/sync/cripto.js', 'js/comum/sync/github.js', 'js/comum/sync/orquestrar.js', 'js/comum/sync/sincronizar.js', 'js/comum/sync/configuracao.js'];
 
 self.addEventListener('install', (e) => {

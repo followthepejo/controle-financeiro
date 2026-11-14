@@ -4,7 +4,8 @@ import { somarMes, novoId, norm } from './util.js';
 
 export function operacaoDe(dados, tipo) {
   const c = dados.categorias.find((k) => k.nome === tipo);
-  if (c) return c.operacao;
+  // "Sem operação" (-) não é cartão: conta como Débito (antes caía no crédito por engano)
+  if (c) return c.operacao === 'Débito' || c.operacao === '-' ? 'Débito' : 'Crédito';
   return /[a-zà-ú]D$/.test(tipo || '') ? 'Débito' : 'Crédito';
 }
 

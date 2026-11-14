@@ -148,6 +148,7 @@ function montarLancamentos(ocr, anoReferencia, hoje = new Date()) {
     dataAnterior = data;
     const partes = grupos[i].sort((a, b) => a.y - b.y || a.x - b.x).map((t) => t.texto);
     let desc = partes.join(' ').replace(/\s*-\s*/g, ' - ').replace(/\s+-\s+(\d{1,2}\/\d{1,2})$/, ' $1');
+    const pixNoCredito = /pix\s+no\s+cr[ée]dito/i.test(desc) || /cr[ée]dito/i.test(tipoDe[i] || ''); // "Pix no Crédito" é cartão
     const p = extrairParcela(desc);
     desc = limparDescricao(p.desc);
     if (!desc) { pedacos.push({ ...v, semDescricao: true, dataTxt: iso(data) }); return; } // valor legível, descrição não lida
@@ -159,7 +160,8 @@ function montarLancamentos(ocr, anoReferencia, hoje = new Date()) {
     lancamentos.push({
       data: iso(data), descricao: desc, valor: v.valor, y: v.cy,
       parcela_atual: p.atual, parcela_total: p.total, tipo: pagamento ? 'pagamento' : entrada ? 'entrada' : estorno ? 'estorno' : 'compra', categoria_sugerida: null,
-      ...(mov && /d[ée]bito|pix|transfer|boleto|saque/i.test(mov) ? { debito: true, meio: mov } : {}),
+      // Pix (sem "no Crédito"), débito, transferência, boleto, saque = sai da conta: Débito
+      ...(!pixNoCredito && ((mov && /d[ée]bito|pix|transfer|boleto|saque/i.test(mov)) || /^pix\b/i.test(partes.join(' ')) && !!mov) ? { debito: true, meio: mov || 'Pix' } : {}),
     });
   });
   // Data na linha sem valor ao lado (quando cada linha tem sua data): compra com valor cortado.

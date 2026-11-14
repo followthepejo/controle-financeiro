@@ -5,10 +5,11 @@ import { juntarPrints } from '../comum/conciliar.js';
 import { mapaAprendido, faturaDaCompra } from '../comum/calculos.js';
 import { prepararLidos, classificar, aplicar, aprenderApelidos } from '../comum/lancamentos.js';
 import { lerPrintCelular } from '../ocr-celular.js';
+import { ehExtrato, lerExtrato } from '../comum/extrato.js';
 import { I } from '../ui.js';
 
 function rascunho(est) {
-  if (!est.print) est.print = { imagens: [], itens: null, destino: faturaDaCompra(est.dados, hojeISO()), quem: est.dados.config.pessoaPadrao, lendo: false, progresso: 0, faltas: [], pagamentos: 0 };
+  if (!est.print) est.print = { imagens: [], extratos: [], itens: null, destino: faturaDaCompra(est.dados, hojeISO()), quem: est.dados.config.pessoaPadrao, lendo: false, progresso: 0, faltas: [], pagamentos: 0 };
   return est.print;
 }
 
@@ -35,12 +36,17 @@ export function render(est, raiz, ctx) {
       <section class="cartao">
         <label class="escolher">${I.foto}<b>Escolher prints</b><span class="sutil">da galeria (pode escolher vários)</span>
           <input type="file" id="arquivos" accept="image/*" multiple hidden></label>
+        <div class="duas">
+          <button class="btn" id="colar">Colar imagem</button>
+          <label class="btn">Arquivo CSV/OFX<input type="file" id="extratos" accept=".csv,.ofx,text/csv,text/plain,application/x-ofx,application/octet-stream" multiple hidden></label>
+        </div>
+        ${r.extratos.length ? html`<ul class="lista-gastos">${r.extratos.map((ex, i) => html`<li><span class="desc">${ex.nome}<small>${ex.res.fonte} · ${ex.res.lancamentos.filter((l) => l.tipo === 'compra').length} lançamentos</small></span><button class="icone-btn pequeno" data-tirar-ex="${i}" aria-label="Tirar">${I.lixo}</button></li>`)}</ul>` : ''}
         ${r.imagens.length ? html`<div class="miniaturas">${r.imagens.map((im, i) => html`<figure><img src="${im.url}" alt=""><button class="icone-btn pequeno" data-tirar="${i}" aria-label="Tirar">${I.lixo}</button></figure>`)}</div>` : ''}
         <label>Lançar na fatura de<select id="destino">${destinos.map((id) => html`<option value="${id}" ${id === r.destino ? 'selected' : ''}>${nomeMes(id)}${ids.includes(id) ? '' : ' (novo)'}</option>`)}</select></label>
         <label>Dono padrão<select id="quem">${d.config.pessoas.map((p) => html`<option ${p === r.quem ? 'selected' : ''}>${p}</option>`)}</select></label>
-        <button class="btn primario grande" id="ler" ${!r.imagens.length || r.lendo ? 'disabled' : ''}>${r.lendo ? `Lendo… ${Math.round(r.progresso * 100)}%` : `Ler ${r.imagens.length || ''} ${r.imagens.length === 1 ? 'imagem' : 'imagens'}`}</button>
+        <button class="btn primario grande" id="ler" ${!(r.imagens.length + r.extratos.length) || r.lendo ? 'disabled' : ''}>${r.lendo ? `Lendo… ${Math.round(r.progresso * 100)}%` : `Ler ${r.imagens.length + r.extratos.length || ''} ${r.imagens.length + r.extratos.length === 1 ? 'arquivo' : 'arquivos'}`}</button>
         ${r.lendo ? html`<div class="barra"><i data-w="${(r.progresso * 100).toFixed(0)}"></i></div>` : ''}
-        <p class="sutil pequeno">A leitura acontece aqui no celular; a imagem não vai para lugar nenhum. Na primeira vez ele baixa o leitor (uns 6 MB).</p>
+        <p class="sutil pequeno">A leitura acontece aqui no celular; nada vai para lugar nenhum. CSV/OFX: exporte a fatura no app do banco e escolha o arquivo. Na primeira vez ele baixa o leitor (uns 6 MB).</p>
       </section>`
     : html`
       <section class="cartao">
@@ -67,18 +73,36 @@ export function render(est, raiz, ctx) {
       <div class="barra-acoes"><button class="btn" id="descartar">Descartar</button><button class="btn primario" id="lancar">${I.check} Lançar ${sel().length}</button></div>`}`);
 
   if (!r.itens) {
-    $('#arquivos').addEventListener('change', (e) => {
-      for (const f of e.target.files) r.imagens.push({ arquivo: f, url: URL.createObjectURL(f) });
+    const adicionar = async (lista) => {
+      for (const f of lista) {
+        try {
+          if (ehExtrato(f.name)) { const res = lerExtrato(f.name, await f.arrayBuffer()); r.extratos.push({ nome: f.name, res }); if (res.fatura_mes) r.destino = res.fatura_mes; }
+          else if ((f.type || '').startsWith('image/') || /\.(png|jpe?g|heic|webp)$/i.test(f.name)) r.imagens.push({ arquivo: f, url: URL.createObjectURL(f) });
+          else avisar(`"${f.name}" não é imagem, CSV nem OFX.`, 'erro');
+        } catch (er) { avisar(`${f.name}: ${er.message}`, 'erro'); }
+      }
       ctx.redesenhar();
-    });
+    };
+    $('#arquivos').addEventListener('change', (e) => adicionar([...e.target.files]));
+    $('#extratos').addEventListener('change', (e) => adicionar([...e.target.files]));
+    $('#colar').onclick = async () => {
+      try {
+        const itens = await navigator.clipboard.read();
+        const fs = [];
+        for (const it of itens) { const t = it.types.find((x) => x.startsWith('image/')); if (t) fs.push(new File([await it.getType(t)], 'imagem colada.png', { type: t })); }
+        if (!fs.length) return avisar('Não há imagem copiada. No Telegram ou na galeria: segure a foto → Copiar.', 'erro');
+        adicionar(fs); avisar('Imagem colada.');
+      } catch { avisar('Não consegui colar. Copie a imagem de novo e toque em Colar (permita o acesso se o iPhone perguntar).', 'erro'); }
+    };
+    raiz.querySelectorAll('[data-tirar-ex]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); r.extratos.splice(Number(b.dataset.tirarEx), 1); ctx.redesenhar(); }));
     raiz.querySelectorAll('[data-tirar]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); const [im] = r.imagens.splice(Number(b.dataset.tirar), 1); URL.revokeObjectURL(im.url); ctx.redesenhar(); }));
     $('#destino').onchange = (e) => { r.destino = e.target.value; };
     $('#quem').onchange = (e) => { r.quem = e.target.value; };
     $('#ler').onclick = async () => {
       r.lendo = true; r.progresso = 0; ctx.redesenhar();
       try {
-        const resultados = [];
-        let fatura = null;
+        const resultados = r.extratos.map((ex) => ex.res);
+        let fatura = r.extratos.map((ex) => ex.res.fatura_mes).filter(Boolean).at(-1) || null;
         for (let k = 0; k < r.imagens.length; k++) {
           const res = await lerPrintCelular(r.imagens[k].arquivo, Number(r.destino.slice(0, 4)), (p) => {
             r.progresso = (k + p) / r.imagens.length;

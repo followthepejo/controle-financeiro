@@ -188,3 +188,4 @@ h3.mt { margin-top: 10px; }
 .voltar-topo h2 { font-size: 1.2rem; }
 .chips.rolar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
 .chips.rolar .chip { white-space: nowrap; flex: none; }
+label.btn { flex-direction: row; font-size: 1rem; color: var(--texto); }

@@ -2,7 +2,7 @@
 // Regras para lançar gastos (do print ou digitados) — as MESMAS no PC e no celular.
 // Os gastos de quem é o "dono" (pessoa padrão) entram no mês e no cartão; os das outras pessoas, só no cartão.
 import { novoId, norm } from './util.js';
-import { mesAlvo, conciliar, existeNoCartao, acharNoCartao, chaveNome, garantirNoCartao } from './conciliar.js';
+import { mesAlvo, conciliar, existeNoCartao, acharNoCartao, chaveNome, garantirNoCartao, cartaoDoGasto } from './conciliar.js';
 import { assinaturaConhecida } from './assinaturas.js';
 import { sugerirCategoria, operacaoDe, faturaDaCompra } from './calculos.js';
 
@@ -70,7 +70,14 @@ export function aplicar(d, destino, ativos, { noCartao: levarAoCartao = true } =
     if (x.quem === eu) {
       if (x.acao === 'completar') {
         const g = mes.gastos.find((y) => y.id === x.alvo);
-        if (g) { if (!g.data && x.data) g.data = x.data; if (!g.tipo && x.tipo) g.tipo = x.tipo; if (!g.parcela && x.parcela) g.parcela = x.parcela; if (x.completa.includes('valor')) g.valor = x.valor; completados++; }
+        if (!g) continue;
+        if (!g.data && x.data) g.data = x.data; if (!g.tipo && x.tipo) g.tipo = x.tipo; if (!g.parcela && x.parcela) g.parcela = x.parcela; if (x.completa.includes('valor')) g.valor = x.valor; completados++;
+        // no cartão vale o lançamento JÁ LIGADO a esse gasto (ex.: "Apple.Com/Bill" completa o "Capcut Pro": não cria outro)
+        if (!levarAoCartao || x.debito || operacaoDe(d, g.tipo) === 'Débito') continue;
+        const c = cartaoDoGasto(d, mes, g);
+        if (c) { if (x.data && c.data !== x.data) c.data = x.data; if (x.completa.includes('valor')) c.valor = x.valor; }
+        else if (garantirNoCartao(d, mes, g)) noCartao++;
+        continue;
       } else {
         mes.gastos.push({ id: novoId(), data: x.data, descricao: x.descricao, valor: x.valor, parcela: x.parcela, tipo: x.tipo, origem: x.origem || 'print' });
         novos++;

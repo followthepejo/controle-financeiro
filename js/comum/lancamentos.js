@@ -40,10 +40,11 @@ export function classificar(d, destino, itens) {
   if (!itens) return;
   const { mes } = mesAlvo(d, destino);
   const meus = itens.filter((x) => x.quem === d.config.pessoaPadrao);
+  const anterior = new Map(itens.map((x) => [x, x.acao])); // guardado ANTES de conferir (senão "já lançado" ficava marcado)
   conciliar(mes, meus);
   const fatDe = (dt) => faturaDaCompra(d, dt);
   for (const x of itens) {
-    const antes = x.acao;
+    const antes = anterior.get(x);
     x.soCartao = x.quem !== d.config.pessoaPadrao;
     if (x.soCartao) { const c = acharNoCartao(d, x, fatDe); x.acao = c ? 'existe' : 'novo'; x.alvoDescricao = c ? `no cartão (${c.quem}: ${c.descricao})` : ''; x.completa = []; }
     else if (x.acao === 'novo') {

@@ -189,3 +189,11 @@ h3.mt { margin-top: 10px; }
 .chips.rolar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
 .chips.rolar .chip { white-space: nowrap; flex: none; }
 label.btn { flex-direction: row; font-size: 1rem; color: var(--texto); }
+/* ---------- editar lançamento do cartão ---------- */
+.lista-gastos li.tocavel { cursor: pointer; border-radius: 8px; }
+.lista-gastos li.tocavel:active { background: var(--acento-fundo); }
+.modal.editar { gap: 10px; }
+.modal.editar input, .modal.editar select { min-height: 44px; }
+.linha-check { flex-direction: row; align-items: center; gap: 10px; color: var(--texto); font-size: .92rem; }
+.linha-check input { width: 22px; height: 22px; min-height: 0; accent-color: var(--acento); }
+.modal.editar > .btn.perigo { width: 100%; margin-top: 2px; }

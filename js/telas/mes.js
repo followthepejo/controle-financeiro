@@ -1,7 +1,7 @@
 // Mês (igual à aba Mês do PC): referência do fechamento, Dívidas (tetos), Demonstrativos (receitas) e os gastos do mês.
 // Tocar num gasto abre a edição; o mesmo lançamento no cartão acompanha.
 import { html, montar, cru, brl, nomeMes, dataBR, dataCurta, hojeISO, lerValor, avisar, confirmar, norm } from '../comum/util.js';
-import { resumoMes, diasRestantes, periodoFatura, operacaoDe, lerParcela, ordenarPadraoGastos, grupoGasto, ehAssinaturaGasto, classeSaldo } from '../comum/calculos.js';
+import { resumoMes, diasRestantes, periodoFatura, operacaoDe, lerParcela, ordenarPadraoGastos, grupoGasto, ehAssinaturaGasto, classeSaldo, classeGasto } from '../comum/calculos.js';
 import { cartaoDoGasto, garantirNoCartao } from '../comum/conciliar.js';
 import { seletorMes, I } from '../ui.js';
 
@@ -69,7 +69,7 @@ export function render(est, raiz, ctx) {
         <tr class="cab"><td>Tipo</td><td class="num">Valor</td><td class="num">Teto</td></tr>
         <tr><td>Crédito</td><td class="num">${brl(r.credito)}</td><td class="num">${campo('data-teto="credito"', mes.tetos.credito)}</td></tr>
         <tr><td>Débito</td><td class="num">${brl(r.debito)}</td><td class="num">${campo('data-teto="debito"', mes.tetos.debito)}</td></tr>
-        <tr class="destaque-neg"><td>Total gasto</td><td class="num" colspan="2">${brl(r.gasto)}</td></tr>
+        <tr class="${classeGasto(r.gasto)}"><td>Total gasto</td><td class="num" colspan="2">${brl(r.gasto)}</td></tr>
         <tr><td>Teto total</td><td class="num" colspan="2">${brl((r.tetoCredito || 0) + (r.tetoDebito || 0))}</td></tr>
         <tr><td>Total ganho</td><td class="num" colspan="2">${brl(r.ganho)}</td></tr>
         <tr class="${classeSaldo(r.saldo)}"><td>Saldo (PnL)</td><td class="num" colspan="2">${brl(r.saldo)}</td></tr>

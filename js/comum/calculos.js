@@ -164,3 +164,5 @@ export function ordenarPadraoGastos(lista) {
 // Cor do Saldo (PnL) — a MESMA regra da planilha (formatação condicional da linha "PnL (Sem Guardado)"):
 // < 600 vermelho (negrito, itálico, riscado) · 600 a 1249,99 amarelo (riscado) · 1250 ou mais verde
 export const classeSaldo = (saldo) => (saldo < 600 ? 'saldo-baixo' : saldo < 1250 ? 'saldo-medio' : 'saldo-bom');
+// Cor do Total gasto — regra da planilha (linha "Total Gasto"): < 1200 verde · 1200 a 1599,99 amarelo · 1600 a 1999,99 laranja · 2000 ou mais vermelho
+export const classeGasto = (total) => (total < 1200 ? 'gasto-ok' : total < 1600 ? 'gasto-atencao' : total < 2000 ? 'gasto-alto' : 'gasto-estourou');

@@ -1,6 +1,6 @@
 // Guarda o app no celular para abrir rápido e funcionar sem internet (os dados vêm do GitHub quando houver internet).
 // Só arquivos do próprio site passam por aqui; o GitHub (api.github.com) nunca é guardado em cache.
-const VERSAO = 'd4f14c506504';
+const VERSAO = 'a9fc2fb50110';
 const CACHE = `cf-${VERSAO}`;
 const BASICOS = ['./', 'index.html', 'estilo.css', 'manifest.webmanifest', 'icones/icone-192.png', 'icones/apple-180.png',
   'js/app.js', 'js/cofre-local.js', 'js/ui.js', 'js/ocr-celular.js', 'js/ocr-linhas.js',

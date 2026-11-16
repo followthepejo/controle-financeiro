@@ -122,7 +122,7 @@ export function conciliar(mes, itens) {
   const mesmoValor = (g, x) => valorIgual(g.valor, x.valor)
     || (valorPerto(g.valor, x.valor) && parecido(g.descricao, x.descricao) && (mesmaParcela(g.parcela, x.parcela) || /^fixo$/i.test(g.parcela || '') || (!g.data && totalParcela(g.parcela) && totalParcela(g.parcela) === totalParcela(x.parcela))));
   for (const x of itens) {
-    x.acao = 'novo'; x.alvo = null; x.completa = [];
+    x.acao = 'novo'; x.alvo = null; x.completa = []; x.provavel = false;
     if (x.pagamento) continue;
     const livres = mes.gastos.filter((g) => !usados.has(g.id) && mesmoValor(g, x));
     // 1) mesma data e mesmo valor: já está lá
@@ -136,6 +136,19 @@ export function conciliar(mes, itens) {
     }
     // 3) mesmo valor, nome parecido e data próxima: já está lá
     if (!g) g = livres.find((y) => y.data && x.data && diasEntre(y.data, x.data) <= 3 && parecido(y.descricao, x.descricao));
+    // 4) o banco usa outro nome ("Apple.Com/Bill" = Capcut Pro, "Infpay* 6411…" = Coca MCAR): mesmo valor EXATO,
+    //    até 2 dias de diferença e um único candidato. Valor redondo (R$ 5,00, 30,00) repete demais: não vale.
+    //    Fica como "provavelmente já lançado" (desmarcado) — se for outra compra, é só marcar.
+    if (!g && x.data && Math.round(Math.abs(x.valor) * 100) % 100 !== 0) {
+      const cand = livres.filter((y) => valorIgual(y.valor, x.valor) && y.data && diasEntre(y.data, x.data) <= 2);
+      if (cand.length === 1) {
+        g = cand[0];
+        usados.add(g.id);
+        x.alvo = g.id; x.acao = 'existe'; x.provavel = true; x.completa = [];
+        x.alvoDescricao = g.descricao; x.diasDif = diasEntre(g.data, x.data);
+        continue;
+      }
+    }
     if (!g) continue;
     usados.add(g.id);
     x.alvo = g.id;

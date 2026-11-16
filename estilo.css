@@ -226,7 +226,7 @@ label.btn { flex-direction: row; font-size: 1rem; color: var(--texto); }
 .abas button { font-size: .66rem; }
 
 /* ---------- tema ---------- */
-.tema-modal { gap: 12px; }
+.tema-modal { gap: 12px; max-height: 86dvh; overscroll-behavior: contain; }
 .temas-grade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .temas-grade.apagado { opacity: .55; }
 .tema-cartao { border: 2px solid var(--borda); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }

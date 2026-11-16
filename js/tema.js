@@ -14,10 +14,16 @@ export const FONTES = [
   { id: 'Georgia (serifada)', css: "Georgia, 'Times New Roman', serif" },
 ];
 const CHAVE = 'cf-aparencia';
-const PADRAO = { seguirPC: true, tema: 'roxo', temaPersonalizado: null, fonte: 'Sistema (iPhone)', tamanhoFonte: 16, limpo: false, animTeclado: 'pulso' };
-export const ANIMACOES = [['pulso', 'Pulso (a tecla afunda com um anel)'], ['onda', 'Onda (círculo sai do dedo)'], ['brilho', 'Brilho (a tecla acende)']];
+const PADRAO = { seguirPC: true, tema: 'roxo', temaPersonalizado: null, fonte: 'Sistema (iPhone)', tamanhoFonte: 16, limpo: false, animTeclado: 'onda' };
+export const ANIMACOES = [['onda', 'Onda (círculo sai do dedo)'], ['pulso', 'Pulso (a tecla afunda com um anel)'], ['brilho', 'Brilho (a tecla acende)']];
 
-export function lerAparencia() { try { return { ...PADRAO, ...JSON.parse(localStorage.getItem(CHAVE) || '{}') }; } catch { return { ...PADRAO }; } }
+export function lerAparencia() {
+  try {
+    const a = { ...PADRAO, ...JSON.parse(localStorage.getItem(CHAVE) || '{}') };
+    if (!a.animEscolhida) a.animTeclado = 'onda'; // padrão escolhido: Onda (até você trocar em Ajustes)
+    return a;
+  } catch { return { ...PADRAO }; }
+}
 function gravarAparencia(a) { try { localStorage.setItem(CHAVE, JSON.stringify(a)); } catch { /* sem espaço: segue sem guardar */ } }
 
 const hexRgb = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
@@ -53,7 +59,7 @@ export function aplicarTema(cfg) {
   v('--tam', `${Math.min(19, Math.max(14, Number(cfg.tamanhoFonte) || 16))}px`);
   raiz.style.colorScheme = claro ? 'light' : 'dark';
   raiz.dataset.modo = claro ? 'claro' : 'escuro';
-  raiz.dataset.animTeclado = cfg.animTeclado || lerAparencia().animTeclado || 'pulso';
+  raiz.dataset.animTeclado = cfg.animTeclado || lerAparencia().animTeclado || 'onda';
   document.body?.classList.toggle('limpo', !!cfg.limpo);
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', p.fundo);
 }
@@ -72,6 +78,15 @@ export function abrirTema(configPC, aoMudar) {
   const mini = (p) => html`<span class="tema-mini" data-pinta="background=${p.superficie};borderColor=${p.borda}">
     <span class="tm-bola" data-pinta="background=${p.destaque}"></span>
     <span class="tm-linhas"><i data-pinta="background=${p.texto};width=64%"></i><i data-pinta="background=${p.textoSec};width=30%"></i><i data-pinta="background=${p.positivo};width=18%"></i><i data-pinta="background=${p.negativo};width=18%"></i></span></span>`;
+  function atualizarMiniPersonalizado() {
+    const p = { ...TEMAS.roxo, ...rasc.temaPersonalizado };
+    const card = fundo.querySelector('[data-tema=personalizado]'); if (!card) return;
+    card.style.background = p.fundo;
+    const mini = card.querySelector('.tema-mini'); mini.style.background = p.superficie; mini.style.borderColor = p.borda;
+    card.querySelector('.tm-bola').style.background = p.destaque;
+    const ls = card.querySelectorAll('.tm-linhas i'); [p.texto, p.textoSec, p.positivo, p.negativo].forEach((c, i) => { if (ls[i]) ls[i].style.background = c; });
+    card.querySelector('.tema-nome').style.color = p.texto;
+  }
   function desenhar() {
     const pers = { ...TEMAS.roxo, ...rasc.temaPersonalizado };
     montar(fundo, html`<div class="modal tema-modal" role="dialog" aria-modal="true" aria-label="Tema">
@@ -94,11 +109,11 @@ export function abrirTema(configPC, aoMudar) {
   const previa = () => aplicarTema(rasc);
   const fechar = (salvar) => {
     fundo.remove();
-    if (salvar) { gravarAparencia({ seguirPC: rasc.seguirPC, tema: rasc.tema, temaPersonalizado: rasc.tema === 'personalizado' ? rasc.temaPersonalizado : lerAparencia().temaPersonalizado, fonte: rasc.fonte, tamanhoFonte: rasc.tamanhoFonte, limpo: rasc.limpo, animTeclado: rasc.animTeclado }); avisar('Tema salvo neste celular.'); }
+    if (salvar) { gravarAparencia({ seguirPC: rasc.seguirPC, tema: rasc.tema, temaPersonalizado: rasc.tema === 'personalizado' ? rasc.temaPersonalizado : lerAparencia().temaPersonalizado, fonte: rasc.fonte, tamanhoFonte: rasc.tamanhoFonte, limpo: rasc.limpo, animTeclado: rasc.animTeclado, animEscolhida: rasc.animEscolhida || false }); avisar('Tema salvo neste celular.'); }
     aoMudar();
   };
   fundo.addEventListener('click', (e) => {
-    if (e.target === fundo) return fechar(false);
+    // (tocar fora NÃO fecha: o seletor de cores do iPhone fica por cima e os toques nele contavam como "fora")
     const t = e.target.closest('[data-tema],[data-acao]');
     if (!t || t.matches('input')) return;
     if (t.dataset.tema) { if (rasc.seguirPC) rasc.seguirPC = false; rasc.tema = t.dataset.tema; desenhar(); previa(); return; }
@@ -122,8 +137,8 @@ export function abrirTema(configPC, aoMudar) {
     if (t.dataset.acao === 'seguir') { rasc.seguirPC = t.checked; if (t.checked && configPC) Object.assign(rasc, { tema: configPC.tema || 'roxo', limpo: !!configPC.limpo, ...(FONTES.some((f) => f.id === configPC.fonte) ? { fonte: configPC.fonte } : {}) }); desenhar(); previa(); }
     if (t.dataset.acao === 'limpo') { rasc.limpo = t.checked; previa(); }
     if (t.dataset.acao === 'fonte') { rasc.fonte = t.value; previa(); }
-    if (t.dataset.acao === 'anim') { rasc.animTeclado = t.value; previa(); }
-    if (t.dataset.cor) desenhar();
+    if (t.dataset.acao === 'anim') { rasc.animTeclado = t.value; rasc.animEscolhida = true; previa(); }
+    if (t.dataset.cor) atualizarMiniPersonalizado(); // sem redesenhar a janela (isso fechava o seletor de cores)
     if (t.id === 'tema-arq' && t.files[0]) {
       try {
         const t2 = JSON.parse(await t.files[0].text());

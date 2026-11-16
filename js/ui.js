@@ -34,7 +34,7 @@ export function tecladoPin(alvo, aoCompletar) {
   teclado.addEventListener('pointerdown', (e) => {
     const b = e.target.closest('[data-n]');
     if (!b) return;
-    const anim = document.documentElement.dataset.animTeclado || 'pulso';
+    const anim = document.documentElement.dataset.animTeclado || 'onda';
     if (anim === 'onda') {
       const r = b.getBoundingClientRect(); const tam = Math.max(r.width, r.height);
       const o = document.createElement('span'); o.className = 'onda';

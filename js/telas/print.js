@@ -14,6 +14,7 @@ function rascunho(est) {
 }
 
 function situacao(x) {
+  if (x.acao === 'existe' && x.provavel) return html`<span class="etiqueta aviso">Provavelmente já lançado</span>`;
   if (x.acao === 'existe') return html`<span class="etiqueta">Já lançado</span>`;
   if (x.acao === 'completar') return html`<span class="etiqueta completar">Completa ${x.completa.join(' e ')}</span>`;
   if (x.soCartao) return html`<span class="etiqueta novo">Novo · só cartão</span>`;
@@ -68,7 +69,7 @@ export function render(est, raiz, ctx) {
           <select data-c="quem" aria-label="Dono">${d.config.pessoas.map((p) => html`<option ${p === x.quem ? 'selected' : ''}>${p}</option>`)}</select>
           <select data-c="tipo" aria-label="Categoria"><option value="">— categoria —</option>${cats.map((c) => html`<option value="${c.nome}" ${c.nome === x.tipo ? 'selected' : ''}>${c.nome}</option>`)}</select>
         </div>
-        ${x.acao === 'existe' || x.acao === 'completar' ? html`<small class="sutil">${x.alvoDescricao}</small>` : ''}
+        ${x.acao === 'existe' || x.acao === 'completar' ? html`<small class="sutil">${x.provavel ? `Parece ser "${x.alvoDescricao}" (mesmo valor, ${x.diasDif === 0 ? 'mesmo dia' : `${x.diasDif} dia(s) de diferença`}). Se for outra compra, marque para lançar.` : x.alvoDescricao}</small>` : ''}
       </section>`)}
       <div class="barra-acoes"><button class="btn" id="descartar">Descartar</button><button class="btn primario" id="lancar">${I.check} Lançar ${sel().length}</button></div>`}`);
 

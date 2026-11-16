@@ -297,12 +297,10 @@ body.travada .entrada { position: fixed; inset: 0; min-height: 0; height: 100%; 
 .lg-acoes .icone-btn.ativo { color: var(--acento2); }
 #ordem-mes { margin: 6px 0 2px; }
 #ordem-mes .chip { padding: 6px 12px; font-size: .82rem; }
-/* Saldo (PnL): mesma regra de cores da planilha */
-.tabela-demo tr.saldo-baixo td { background: #c00000; color: #000; font-weight: 700; font-style: italic; text-decoration: line-through; }
-.tabela-demo tr.saldo-medio td { background: #ffff00; color: #000; text-decoration: line-through; }
-.tabela-demo tr.saldo-bom td { background: #4ea72e; color: #fff; font-weight: 700; }
-/* Total gasto: mesma regra de cores da planilha */
-.tabela-demo tr.gasto-ok td { background: #4ea72e; color: #000; font-weight: 700; }
-.tabela-demo tr.gasto-atencao td { background: #ffff00; color: #000; font-weight: 700; }
-.tabela-demo tr.gasto-alto td { background: #fa8c00; color: #000; font-weight: 700; }
-.tabela-demo tr.gasto-estourou td { background: #c00000; color: #000; font-weight: 700; font-style: italic; }
+/* Saldo (PnL) e Total gasto: mesmas faixas e cores da planilha, em tom suave (fundo leve + barra lateral) — sem negrito, itálico nem riscado */
+.tabela-demo tr.saldo-baixo td, .tabela-demo tr.gasto-estourou td { --faixa: #e03131; }
+.tabela-demo tr.saldo-medio td, .tabela-demo tr.gasto-atencao td { --faixa: #f2c200; }
+.tabela-demo tr.gasto-alto td { --faixa: #fa8c00; }
+.tabela-demo tr.saldo-bom td, .tabela-demo tr.gasto-ok td { --faixa: #4ea72e; }
+.tabela-demo tr[class^=saldo-] td, .tabela-demo tr[class^=gasto-] td { background: color-mix(in srgb, var(--faixa) 22%, transparent); color: var(--texto); font-weight: 400; font-style: normal; text-decoration: none; }
+.tabela-demo tr[class^=saldo-] td:first-child, .tabela-demo tr[class^=gasto-] td:first-child { box-shadow: inset 4px 0 0 var(--faixa); }

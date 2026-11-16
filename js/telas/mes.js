@@ -1,7 +1,7 @@
 // Mês (igual à aba Mês do PC): referência do fechamento, Dívidas (tetos), Demonstrativos (receitas) e os gastos do mês.
 // Tocar num gasto abre a edição; o mesmo lançamento no cartão acompanha.
 import { html, montar, cru, brl, nomeMes, dataBR, dataCurta, hojeISO, lerValor, avisar, confirmar, norm } from '../comum/util.js';
-import { resumoMes, diasRestantes, periodoFatura, operacaoDe, lerParcela } from '../comum/calculos.js';
+import { resumoMes, diasRestantes, periodoFatura, operacaoDe, lerParcela, ordenarPadraoGastos, grupoGasto, ehAssinaturaGasto } from '../comum/calculos.js';
 import { cartaoDoGasto, garantirNoCartao } from '../comum/conciliar.js';
 import { seletorMes, I } from '../ui.js';
 
@@ -22,9 +22,33 @@ export function render(est, raiz, ctx) {
   const per = periodoFatura(d, mes);
   // attr é sempre um texto fixo do código (ex.: data-rec="extra"), por isso entra sem escapar
   const campo = (attr, valor) => html`<input class="num-campo" ${cru(attr)} value="${v2(valor)}" inputmode="decimal">`;
+  // gastos: mesma tabela do PC (busca, categoria, ordenar por coluna; padrão = assinaturas, parcelas, mais recentes)
   const t = norm(est.buscaMes || '');
-  const gastos = mes.gastos.filter((g) => !t || norm(g.descricao).includes(t) || norm(g.tipo).includes(t))
-    .sort((a, b) => Number(!!a.oculto) - Number(!!b.oculto) || (b.data || '0').localeCompare(a.data || '0'));
+  const fcat = est.catMes || '';
+  const ordem = est.ordemMes || { campo: '', dir: 1 };
+  let gastos = mes.gastos.filter((g) => (!t || norm(g.descricao).includes(t) || norm(g.tipo).includes(t)) && (!fcat || g.tipo === fcat));
+  if (ordem.campo) {
+    const chave = {
+      data: (g) => g.data || '9999', descricao: (g) => norm(g.descricao), valor: (g) => g.valor, tipo: (g) => norm(g.tipo || '~'),
+      local: (g) => (g.tipo ? operacaoDe(d, g.tipo) : '~'),
+      parcela: (g) => { if (/^fixo$/i.test(g.parcela || '')) return -1; const p = lerParcela(g.parcela); return p ? p.total - p.atual + p.total / 1000 : 0; },
+    }[ordem.campo];
+    gastos = [...gastos].sort((a, b) => { const va = chave(a); const vb = chave(b); return (va < vb ? -1 : va > vb ? 1 : 0) * ordem.dir || (a.data || '').localeCompare(b.data || ''); });
+  } else gastos = ordenarPadraoGastos(gastos);
+  const COLUNAS = [['', 'Padrão'], ['data', 'Data'], ['descricao', 'Descrição'], ['valor', 'Valor'], ['parcela', 'Parcela'], ['tipo', 'Categoria'], ['local', 'Local']];
+  const TITULOS = ['Assinaturas', 'Parcelas', 'Gastos do mês (mais recentes primeiro)'];
+  let grupoAnt = -1;
+  const linhaGasto = (g) => {
+    const grupo = grupoGasto(g);
+    const sep = !ordem.campo && grupo !== grupoAnt ? html`<li class="grupo-sep">${TITULOS[grupo]}</li>` : '';
+    grupoAnt = grupo;
+    const op = g.tipo ? operacaoDe(d, g.tipo) : 'Crédito';
+    return html`${sep}<li class="linha-gasto ${g.oculto ? 'oculto' : ''} ${ehAssinaturaGasto(g) ? 'assin' : ''}" data-editar="${g.id}">
+      <div class="lg-principal"><b class="lg-desc">${g.descricao}</b><b class="lg-valor">${brl(g.valor)}</b></div>
+      <div class="lg-detalhes"><span>${g.data ? dataBR(g.data).slice(0, 5) : 'sem data'}</span><span class="chip-p">${g.parcela || '1/1'}</span><span>${g.tipo || '—'}</span><span class="etiqueta ${op === 'Débito' ? 'deb' : 'cred'}">${op}</span>
+        <span class="lg-acoes"><button class="icone-btn pequeno ${g.oculto ? 'ativo' : ''}" data-ocultar="${g.id}" aria-label="${g.oculto ? 'Mostrar' : 'Ocultar'}">${g.oculto ? I.olhoFechado : I.olho}</button><button class="icone-btn pequeno" data-apagar="${g.id}" aria-label="Apagar">${I.lixo}</button></span></div>
+    </li>`;
+  };
 
   montar(raiz, html`
     ${seletorMes(ids, mes.id)}
@@ -71,11 +95,10 @@ export function render(est, raiz, ctx) {
 
     <section class="cartao">
       <div class="cartao-topo"><h3>Gastos do mês</h3><span class="sutil">${mes.gastos.length}</span></div>
-      <input type="search" id="busca-mes" placeholder="Buscar nome ou categoria…" value="${est.buscaMes || ''}" aria-label="Buscar">
-      ${gastos.length ? html`<ul class="lista-gastos">${gastos.map((g) => html`<li class="tocavel ${g.oculto ? 'oculto' : ''} ${/^fixo$/i.test(g.parcela || '') ? 'assinatura' : ''}" data-editar="${g.id}">
-        <span class="data">${g.data ? dataCurta(g.data) : '—'}</span>
-        <span class="desc">${g.descricao}<small>${g.tipo || 'Sem categoria'} · ${g.tipo ? operacaoDe(d, g.tipo) : 'Crédito'}${g.parcela && g.parcela !== '1/1' ? ` · ${g.parcela}` : ''}${g.oculto ? ' · oculto' : ''}</small></span>
-        <b>${brl(g.valor)}</b></li>`)}</ul>` : html`<p class="sutil">Nenhum gasto${t ? ' com essa busca' : ''}.</p>`}
+      <div class="duas"><input type="search" id="busca-mes" placeholder="Buscar…" value="${est.buscaMes || ''}" aria-label="Buscar">
+        <select id="cat-mes" aria-label="Categoria"><option value="">Todas as categorias</option>${[...d.categorias].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).map((c) => html`<option ${c.nome === fcat ? 'selected' : ''}>${c.nome}</option>`)}</select></div>
+      <div class="chips rolar" id="ordem-mes">${COLUNAS.map(([c, rot]) => html`<button class="chip ${ordem.campo === c ? 'ativo' : ''}" data-ordem="${c}">${rot}${c && ordem.campo === c ? (ordem.dir === 1 ? ' ▲' : ' ▼') : ''}</button>`)}</div>
+      ${gastos.length ? html`<ul class="lista-mes">${gastos.map(linhaGasto)}</ul>` : html`<p class="sutil">Nenhum gasto${t || fcat ? ' com esse filtro' : ''}.</p>`}
       <p class="sutil pequeno">Toque num gasto para editar. O mesmo lançamento no cartão acompanha.</p>
     </section>`);
 
@@ -98,6 +121,7 @@ export function render(est, raiz, ctx) {
   };
   raiz.onchange = async (e) => {
     const el = e.target;
+    if (el.id === 'cat-mes') { est.catMes = el.value; ctx.redesenhar(); return; }
     if (el.id === 'busca-mes' || !el.matches('input')) return;
     if (gravar(el)) { await ctx.salvar(); ctx.redesenhar(); }
   };
@@ -115,6 +139,26 @@ export function render(est, raiz, ctx) {
       else if (b.dataset.acao === 'add-receita') rec.outras.push({ descricao: 'Nova receita', valor: 0 });
       else return;
       await ctx.salvar(); ctx.redesenhar(); return;
+    }
+    // ordenar: 1º toque ▲, 2º ▼; "Padrão" volta para assinaturas → parcelas → mais recentes
+    const o = e.target.closest('[data-ordem]');
+    if (o) { const c = o.dataset.ordem; est.ordemMes = !c ? { campo: '', dir: 1 } : ordem.campo === c ? { campo: c, dir: -ordem.dir } : { campo: c, dir: 1 }; ctx.redesenhar(); return; }
+    const oc = e.target.closest('[data-ocultar]');
+    if (oc) {
+      const g = mes.gastos.find((x) => x.id === oc.dataset.ocultar); if (!g) return;
+      const c = cartaoDoGasto(d, mes, g); // o mesmo lançamento no cartão acompanha
+      g.oculto = !g.oculto;
+      if (c) c.oculto = g.oculto; else garantirNoCartao(d, mes, g);
+      await ctx.salvar(); avisar(g.oculto ? 'Oculto: não soma mais (no mês e no cartão).' : 'Voltou a contar.'); ctx.redesenhar(); return;
+    }
+    const ap = e.target.closest('[data-apagar]');
+    if (ap) {
+      const g = mes.gastos.find((x) => x.id === ap.dataset.apagar); if (!g) return;
+      const c = cartaoDoGasto(d, mes, g);
+      if (!(await confirmar('Apagar gasto?', `"${g.descricao}" — ${brl(g.valor)}${c ? ' (apaga também do cartão)' : ''}.`, 'Apagar', true))) return;
+      mes.gastos = mes.gastos.filter((x) => x !== g);
+      if (c) d.cartao = d.cartao.filter((x) => x !== c);
+      await ctx.salvar(); avisar('Gasto apagado.'); ctx.redesenhar(); return;
     }
     const li = e.target.closest('[data-editar]');
     if (li) { const g = mes.gastos.find((x) => x.id === li.dataset.editar); if (g) editarGasto(est, ctx, mes, g); }

@@ -140,3 +140,23 @@ export function faturaDaCompra(dados, dataISO) {
   const mesCompra = dataISO.slice(0, 7);
   return Number(dataISO.slice(8, 10)) >= diaFech(dados) ? somarMes(mesCompra, 1) : mesCompra;
 }
+
+// ---------- Ordem padrão dos gastos do mês (PC e celular) ----------
+// 1º assinaturas (fixos), 2º parcelas (da que falta MAIS para a que falta MENOS), 3º o resto pela data (mais recente primeiro).
+export const ehAssinaturaGasto = (g) => /^fixo$/i.test(String(g.parcela || '').trim()) || norm(g.tipo) === 'assinatura';
+export function grupoGasto(g) {
+  if (ehAssinaturaGasto(g)) return 0;
+  const p = lerParcela(g.parcela);
+  return p && p.total > 1 ? 1 : 2;
+}
+export function ordenarPadraoGastos(lista) {
+  const falta = (g) => { const p = lerParcela(g.parcela); return p ? p.total - p.atual : 0; };
+  const porData = (a, b) => (b.data || '').localeCompare(a.data || '') || norm(a.descricao).localeCompare(norm(b.descricao));
+  return [...lista].sort((a, b) => {
+    const ga = grupoGasto(a); const gb = grupoGasto(b);
+    if (ga !== gb) return ga - gb;
+    if (ga === 0) return norm(a.descricao).localeCompare(norm(b.descricao));
+    if (ga === 1) return falta(b) - falta(a) || porData(a, b);
+    return porData(a, b);
+  });
+}

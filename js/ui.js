@@ -17,6 +17,8 @@ export const I = {
   check: svg('<path d="M5 12l5 5 9-10"/>'),
   alerta: svg('<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/>'),
   nuvem: svg('<path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19 10a4 4 0 0 1-1 8z"/>'),
+  olho: svg('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
+  olhoFechado: svg('<path d="M3 3l18 18M10.6 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7c1.8 0 3.4-.5 4.7-1.2M9.9 9.9a3 3 0 0 0 4.2 4.2"/>'),
   lixo: svg('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'),
 };
 
@@ -27,7 +29,22 @@ export function tecladoPin(alvo, aoCompletar) {
   alvo.insertAdjacentHTML('beforeend', String(html`<div class="pin-pontos" aria-hidden="true">${[0, 1, 2, 3, 4, 5].map(() => html`<i></i>`)}</div>
     <div class="teclado">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => html`<button type="button" data-n="${n}">${n}</button>`)}<span></span><button type="button" data-n="0">0</button><button type="button" data-n="x" aria-label="Apagar">${I.apagar}</button></div>`));
   let ocupado = false;
-  alvo.querySelector('.teclado').addEventListener('click', async (e) => {
+  const teclado = alvo.querySelector('.teclado');
+  // animação ao tocar (escolhida em Ajustes → Tema): pulso, onda ou brilho
+  teclado.addEventListener('pointerdown', (e) => {
+    const b = e.target.closest('[data-n]');
+    if (!b) return;
+    const anim = document.documentElement.dataset.animTeclado || 'pulso';
+    if (anim === 'onda') {
+      const r = b.getBoundingClientRect(); const tam = Math.max(r.width, r.height);
+      const o = document.createElement('span'); o.className = 'onda';
+      Object.assign(o.style, { width: `${tam}px`, height: `${tam}px`, left: `${e.clientX - r.left - tam / 2}px`, top: `${e.clientY - r.top - tam / 2}px` });
+      b.append(o); setTimeout(() => o.remove(), 520);
+    }
+    b.classList.add('tocado');
+    setTimeout(() => b.classList.remove('tocado'), anim === 'brilho' ? 220 : 160);
+  });
+  teclado.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-n]');
     if (!b || ocupado) return;
     if (b.dataset.n === 'x') pin = pin.slice(0, -1);
@@ -37,7 +54,12 @@ export function tecladoPin(alvo, aoCompletar) {
     if (pin.length === 6) {
       ocupado = true;
       const p = pin;
-      try { await aoCompletar(p); } finally { ocupado = false; pin = ''; pontos(); }
+      try { await aoCompletar(p); } finally {
+        ocupado = false; pin = ''; pontos();
+        // PIN errado: os pontinhos tremem
+        const erro = alvo.closest('main')?.querySelector('.erro');
+        if (erro && erro.textContent.trim()) { const pp = alvo.querySelector('.pin-pontos'); pp?.classList.remove('errou'); void pp?.offsetWidth; pp?.classList.add('errou'); navigator.vibrate?.([30, 40, 30]); }
+      }
     }
   });
   return { limpar: () => { pin = ''; pontos(); } };

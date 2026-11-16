@@ -14,7 +14,8 @@ export const FONTES = [
   { id: 'Georgia (serifada)', css: "Georgia, 'Times New Roman', serif" },
 ];
 const CHAVE = 'cf-aparencia';
-const PADRAO = { seguirPC: true, tema: 'roxo', temaPersonalizado: null, fonte: 'Sistema (iPhone)', tamanhoFonte: 16, limpo: false };
+const PADRAO = { seguirPC: true, tema: 'roxo', temaPersonalizado: null, fonte: 'Sistema (iPhone)', tamanhoFonte: 16, limpo: false, animTeclado: 'pulso' };
+export const ANIMACOES = [['pulso', 'Pulso (a tecla afunda com um anel)'], ['onda', 'Onda (círculo sai do dedo)'], ['brilho', 'Brilho (a tecla acende)']];
 
 export function lerAparencia() { try { return { ...PADRAO, ...JSON.parse(localStorage.getItem(CHAVE) || '{}') }; } catch { return { ...PADRAO }; } }
 function gravarAparencia(a) { try { localStorage.setItem(CHAVE, JSON.stringify(a)); } catch { /* sem espaço: segue sem guardar */ } }
@@ -52,6 +53,7 @@ export function aplicarTema(cfg) {
   v('--tam', `${Math.min(19, Math.max(14, Number(cfg.tamanhoFonte) || 16))}px`);
   raiz.style.colorScheme = claro ? 'light' : 'dark';
   raiz.dataset.modo = claro ? 'claro' : 'escuro';
+  raiz.dataset.animTeclado = cfg.animTeclado || lerAparencia().animTeclado || 'pulso';
   document.body?.classList.toggle('limpo', !!cfg.limpo);
   document.querySelector('meta[name=theme-color]')?.setAttribute('content', p.fundo);
 }
@@ -82,6 +84,7 @@ export function abrirTema(configPC, aoMudar) {
       ${rasc.tema === 'personalizado' && !rasc.seguirPC ? html`<div class="cores-grade">${CAMPOS.map(([k, rot]) => html`<label class="cor-campo"><input type="color" data-cor="${k}" value="${pers[k]}"><span>${rot}</span></label>`)}</div>` : ''}
       <label class="linha-check"><input type="checkbox" data-acao="limpo" ${rasc.limpo ? 'checked' : ''} ${rasc.seguirPC ? 'disabled' : ''}> Modo limpo (sem bordas e enfeites)</label>
       <label>Fonte<select data-acao="fonte" ${rasc.seguirPC ? 'disabled' : ''}>${FONTES.map((f) => html`<option value="${f.id}" ${f.id === rasc.fonte ? 'selected' : ''}>${f.id}</option>`)}</select></label>
+      <label>Animação do teclado do PIN<select data-acao="anim">${ANIMACOES.map(([id, rot]) => html`<option value="${id}" ${id === rasc.animTeclado ? 'selected' : ''}>${rot}</option>`)}</select></label>
       <label>Tamanho do texto: <b id="tam-txt">${rasc.tamanhoFonte}px</b><input type="range" min="14" max="19" step="1" data-acao="tamanho" value="${rasc.tamanhoFonte}"></label>
       <div class="duas"><label class="btn">Importar<input type="file" id="tema-arq" accept=".json,application/json" hidden></label><button class="btn" data-acao="exportar">Exportar</button></div>
       <div class="acoes"><button class="btn" data-acao="fechar">Cancelar</button><button class="btn primario" data-acao="concluir">${I.check} Concluir</button></div>
@@ -91,7 +94,7 @@ export function abrirTema(configPC, aoMudar) {
   const previa = () => aplicarTema(rasc);
   const fechar = (salvar) => {
     fundo.remove();
-    if (salvar) { gravarAparencia({ seguirPC: rasc.seguirPC, tema: rasc.tema, temaPersonalizado: rasc.tema === 'personalizado' ? rasc.temaPersonalizado : lerAparencia().temaPersonalizado, fonte: rasc.fonte, tamanhoFonte: rasc.tamanhoFonte, limpo: rasc.limpo }); avisar('Tema salvo neste celular.'); }
+    if (salvar) { gravarAparencia({ seguirPC: rasc.seguirPC, tema: rasc.tema, temaPersonalizado: rasc.tema === 'personalizado' ? rasc.temaPersonalizado : lerAparencia().temaPersonalizado, fonte: rasc.fonte, tamanhoFonte: rasc.tamanhoFonte, limpo: rasc.limpo, animTeclado: rasc.animTeclado }); avisar('Tema salvo neste celular.'); }
     aoMudar();
   };
   fundo.addEventListener('click', (e) => {
@@ -119,6 +122,7 @@ export function abrirTema(configPC, aoMudar) {
     if (t.dataset.acao === 'seguir') { rasc.seguirPC = t.checked; if (t.checked && configPC) Object.assign(rasc, { tema: configPC.tema || 'roxo', limpo: !!configPC.limpo, ...(FONTES.some((f) => f.id === configPC.fonte) ? { fonte: configPC.fonte } : {}) }); desenhar(); previa(); }
     if (t.dataset.acao === 'limpo') { rasc.limpo = t.checked; previa(); }
     if (t.dataset.acao === 'fonte') { rasc.fonte = t.value; previa(); }
+    if (t.dataset.acao === 'anim') { rasc.animTeclado = t.value; previa(); }
     if (t.dataset.cor) desenhar();
     if (t.id === 'tema-arq' && t.files[0]) {
       try {

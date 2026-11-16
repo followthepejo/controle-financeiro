@@ -59,9 +59,13 @@ function sincronizar() {
     try {
       const r = await sincronizarComRepo({ repo: repo(), chave: est.chave, sal: est.lig.sal, dados: structuredClone(est.dados), estado: est.sinc, cache: est.cache });
       if (!est.chave) return; // bloqueou no meio
-      if (est.versao !== v0) { est.dados = aplicarDiferenca(base, est.dados, r.dados); denovo = true; } // você lançou algo durante a sincronização
-      else est.dados = r.dados;
-      normalizar(est.dados);
+      // Só troca os dados da tela quando algo NOVO veio do PC (senão a tela ficaria apontando para a cópia antiga
+      // e um toque logo depois da sincronização se perderia). Se você mexeu durante a sincronização, junta as duas coisas.
+      if (r.resumo.daNuvem > 0) {
+        if (est.versao !== v0) { est.dados = aplicarDiferenca(base, est.dados, r.dados); denovo = true; }
+        else est.dados = r.dados;
+        normalizar(est.dados);
+      } else if (est.versao !== v0) denovo = true; // o que você mexeu agora vai na próxima rodada
       est.sinc = r.estado; est.cache = r.cache; est.ultima = Date.now(); est.erro = null;
       await persistir();
       if (r.resumo.daNuvem > 0) { aplicarTema(aparenciaEfetiva(est.dados.config)); redesenharSeguro(); }
@@ -71,7 +75,11 @@ function sincronizar() {
 }
 
 // ---------- telas de entrada ----------
+// tela do PIN: fixa, sem rolar nem "quicar" (como a tela de bloqueio do iPhone)
+const travarTela = (sim) => document.body.classList.toggle('travada', sim);
+
 function telaPin(msg = '') {
+  travarTela(true);
   est.chave = null; est.dados = null; est.lig = null;
   montar(raiz, html`<main class="entrada">
     <img src="icones/icone-192.png" alt="" width="76" height="76" class="entrada-logo">
@@ -97,6 +105,7 @@ function telaPin(msg = '') {
 }
 
 function telaParear(msg = '') {
+  travarTela(false);
   montar(raiz, html`<main class="entrada parear">
     <img src="icones/icone-192.png" alt="" width="76" height="76" class="entrada-logo">
     <h1>Ligar ao seu PC</h1>
@@ -114,6 +123,7 @@ function telaParear(msg = '') {
   $('#continuar').onclick = () => {
     const codigo = $('#codigo').value.trim();
     if (!codigo) return avisar('Cole o código do PC primeiro.', 'erro');
+    travarTela(true);
     montar(raiz, html`<main class="entrada"><img src="icones/icone-192.png" alt="" width="76" height="76" class="entrada-logo">
       <h1>Digite o PIN do PC</h1><p class="sutil" id="pin-msg">O mesmo PIN que abre o app no computador.</p><div id="pin"></div><p class="erro" id="pin-erro" role="alert"></p>
       <button class="btn link" id="voltar">Voltar</button></main>`);
@@ -143,6 +153,7 @@ function telaParear(msg = '') {
 
 // ---------- app ----------
 function abrirApp() {
+  travarTela(false);
   aplicarTema(aparenciaEfetiva(est.dados.config));
   const ids = est.dados.meses.map((m) => m.id);
   const atual = faturaDaCompra(est.dados, hojeISO());
@@ -197,6 +208,7 @@ function bloquear() { clearTimeout(timerSync); telaPin('Bloqueado. Digite seu PI
 const ctx = { salvar, irPara, redesenhar: desenhar, sincronizar, bloquear, desconectar };
 
 // ---------- ciclo do app ----------
+document.addEventListener('touchmove', (e) => { if (document.body.classList.contains('travada')) e.preventDefault(); }, { passive: false });
 let escondidoEm = 0;
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') { escondidoEm = Date.now(); if (est.chave) sincronizar(); return; }

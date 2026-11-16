@@ -246,3 +246,54 @@ body.limpo .destaque-total { background: var(--painel); }
 body.limpo .topo, body.limpo .abas { border-color: transparent; }
 body.limpo .lista-gastos li { border-top-color: color-mix(in srgb, var(--borda) 50%, transparent); }
 body.limpo .entrada-logo { box-shadow: none; }
+
+/* ---------- tela do PIN fixa ---------- */
+body.travada { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; touch-action: none; }
+body.travada .entrada { position: fixed; inset: 0; min-height: 0; height: 100%; overflow: hidden; }
+.teclado button { position: relative; overflow: hidden; -webkit-user-select: none; user-select: none; transition: transform .12s ease, background-color .18s ease, box-shadow .18s ease, color .18s ease; }
+.pin-pontos i.cheio { animation: ponto-pop .22s ease-out; }
+@keyframes ponto-pop { 0% { transform: scale(.6); } 60% { transform: scale(1.35); } 100% { transform: scale(1.1); } }
+.pin-pontos.errou { animation: tremer .38s ease; }
+@keyframes tremer { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-9px); } 40%, 80% { transform: translateX(9px); } }
+/* opção 1 — Pulso: a tecla afunda e ganha um anel na cor do tema */
+[data-anim-teclado=pulso] .teclado button.tocado { transform: scale(.88); background: var(--acento-fundo); box-shadow: 0 0 0 6px var(--acento-fundo); }
+/* opção 2 — Onda: um círculo se espalha a partir do dedo */
+.teclado .onda { position: absolute; border-radius: 50%; background: var(--acento); opacity: .45; transform: scale(0); animation: onda .5s ease-out forwards; pointer-events: none; }
+@keyframes onda { to { transform: scale(2.6); opacity: 0; } }
+/* opção 3 — Brilho: a tecla acende na cor do tema e o número salta */
+[data-anim-teclado=brilho] .teclado button.tocado { background: var(--acento); color: var(--sobre-acento, #fff); box-shadow: 0 0 22px var(--acento); }
+[data-anim-teclado=brilho] .teclado button.tocado { animation: salto .2s ease; }
+@keyframes salto { 50% { transform: scale(1.08); } }
+.teclado button[data-n=x].tocado { background: transparent !important; box-shadow: none !important; }
+/* ---------- pessoas e categorias ---------- */
+.lista-cadastro { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.lista-cadastro li { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+#cats li { grid-template-columns: 1fr 112px 26px auto; }
+.lista-cadastro input, .lista-cadastro select { min-height: 40px; }
+.lista-cadastro select { padding-right: 24px; font-size: .9rem; }
+.lista-cadastro small { text-align: right; font-size: .74rem; }
+.form-linha-cel { display: flex; gap: 8px; margin: 6px 0; }
+.form-linha-cel input { flex: 1; min-width: 0; }
+.form-linha-cel select { width: 130px; flex: none; }
+.form-linha-cel .btn { flex: none; min-width: 48px; padding: 0 12px; }
+/* ---------- gastos do mês (como no PC) ---------- */
+.lista-mes { list-style: none; margin: 4px 0 0; padding: 0; }
+.lista-mes .grupo-sep { padding: 12px 2px 4px; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--sutil); border-bottom: 1px solid var(--borda); }
+.linha-gasto { padding: 9px 8px 7px 10px; border-bottom: 1px solid var(--borda); border-left: 3px solid transparent; cursor: pointer; }
+.linha-gasto:active { background: var(--acento-fundo); }
+.linha-gasto.assin { background: var(--acento-fundo); border-left-color: var(--acento); }
+.linha-gasto.assin .lg-desc { color: var(--acento2); }
+.linha-gasto.oculto { opacity: .42; }
+.linha-gasto.oculto .lg-valor { text-decoration: line-through; }
+.lg-principal { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.lg-desc { font-weight: 550; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lg-valor { white-space: nowrap; }
+.lg-detalhes { display: flex; align-items: center; gap: 8px; font-size: .78rem; color: var(--sutil); margin-top: 3px; flex-wrap: wrap; }
+.chip-p { background: var(--painel2); border-radius: 6px; padding: 1px 6px; color: var(--texto); }
+.etiqueta.cred { background: var(--acento-fundo); color: var(--acento2); }
+.etiqueta.deb { background: color-mix(in srgb, var(--aviso) 18%, transparent); color: var(--aviso); }
+.lg-acoes { margin-left: auto; display: flex; gap: 2px; }
+.lg-acoes .icone-btn { width: 32px; height: 32px; }
+.lg-acoes .icone-btn.ativo { color: var(--acento2); }
+#ordem-mes { margin: 6px 0 2px; }
+#ordem-mes .chip { padding: 6px 12px; font-size: .82rem; }

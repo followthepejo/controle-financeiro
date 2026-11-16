@@ -160,3 +160,7 @@ export function ordenarPadraoGastos(lista) {
     return porData(a, b);
   });
 }
+
+// Cor do Saldo (PnL) — a MESMA regra da planilha (formatação condicional da linha "PnL (Sem Guardado)"):
+// < 600 vermelho (negrito, itálico, riscado) · 600 a 1249,99 amarelo (riscado) · 1250 ou mais verde
+export const classeSaldo = (saldo) => (saldo < 600 ? 'saldo-baixo' : saldo < 1250 ? 'saldo-medio' : 'saldo-bom');

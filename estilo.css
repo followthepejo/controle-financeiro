@@ -200,7 +200,7 @@ label.btn { flex-direction: row; font-size: 1rem; color: var(--texto); }
 .modal.editar > .btn.perigo { width: 100%; margin-top: 2px; }
 
 /* ---------- aba Mês ---------- */
-.quadro-ref { --rosa: color-mix(in srgb, #e0457b 26%, var(--painel)); --rosa-borda: color-mix(in srgb, #e0457b 45%, var(--borda)); background: var(--rosa); border-color: var(--rosa-borda); padding: 0; overflow: hidden; }
+.quadro-ref { --rosa: color-mix(in srgb, var(--acento) 22%, var(--painel)); --rosa-borda: color-mix(in srgb, var(--acento) 40%, var(--borda)); background: var(--rosa); border-color: var(--rosa-borda); padding: 0; overflow: hidden; }
 .tabela-ref { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .tabela-ref th, .tabela-ref td { padding: 10px 12px; border-bottom: 1px solid var(--rosa-borda); text-align: center; }
 .tabela-ref tr:last-child th, .tabela-ref tr:last-child td { border-bottom: none; }
@@ -297,3 +297,7 @@ body.travada .entrada { position: fixed; inset: 0; min-height: 0; height: 100%; 
 .lg-acoes .icone-btn.ativo { color: var(--acento2); }
 #ordem-mes { margin: 6px 0 2px; }
 #ordem-mes .chip { padding: 6px 12px; font-size: .82rem; }
+/* Saldo (PnL): mesma regra de cores da planilha */
+.tabela-demo tr.saldo-baixo td { background: #c00000; color: #000; font-weight: 700; font-style: italic; text-decoration: line-through; }
+.tabela-demo tr.saldo-medio td { background: #ffff00; color: #000; text-decoration: line-through; }
+.tabela-demo tr.saldo-bom td { background: #4ea72e; color: #fff; font-weight: 700; }

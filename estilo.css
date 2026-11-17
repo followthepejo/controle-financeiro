@@ -304,3 +304,5 @@ body.travada .entrada { position: fixed; inset: 0; min-height: 0; height: 100%; 
 .tabela-demo tr.saldo-bom td, .tabela-demo tr.gasto-ok td { --faixa: #4ea72e; }
 .tabela-demo tr[class^=saldo-] td, .tabela-demo tr[class^=gasto-] td { background: color-mix(in srgb, var(--faixa) 22%, transparent); color: var(--texto); font-weight: 400; font-style: normal; text-decoration: none; }
 .tabela-demo tr[class^=saldo-] td:first-child, .tabela-demo tr[class^=gasto-] td:first-child { box-shadow: inset 4px 0 0 var(--faixa); }
+/* teclado do PIN: sem atraso de toque duplo / zoom no iPhone */
+.teclado, .teclado button { touch-action: manipulation; -webkit-touch-callout: none; }

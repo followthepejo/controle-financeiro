@@ -31,9 +31,13 @@ export function tecladoPin(alvo, aoCompletar) {
   let ocupado = false;
   const teclado = alvo.querySelector('.teclado');
   // animação ao tocar (escolhida em Ajustes → Tema): pulso, onda ou brilho
+  // O número entra NO INSTANTE em que o dedo encosta (pointerdown). O "clique" do iPhone chega atrasado e,
+  // com toques rápidos, ele trata dois toques como "toque duplo" e descarta um — era isso que perdia números.
   teclado.addEventListener('pointerdown', (e) => {
     const b = e.target.closest('[data-n]');
     if (!b) return;
+    e.preventDefault(); // sem clique sintético, sem zoom, sem seleção
+    digitar(b.dataset.n);
     const anim = document.documentElement.dataset.animTeclado || 'onda';
     if (anim === 'onda') {
       const r = b.getBoundingClientRect(); const tam = Math.max(r.width, r.height);
@@ -44,11 +48,12 @@ export function tecladoPin(alvo, aoCompletar) {
     b.classList.add('tocado');
     setTimeout(() => b.classList.remove('tocado'), anim === 'brilho' ? 220 : 160);
   });
-  teclado.addEventListener('click', async (e) => {
-    const b = e.target.closest('[data-n]');
-    if (!b || ocupado) return;
-    if (b.dataset.n === 'x') pin = pin.slice(0, -1);
-    else if (pin.length < 6) pin += b.dataset.n;
+  // clique só vale quando vem do teclado físico/leitor de tela (detail 0); o toque já foi tratado no pointerdown
+  teclado.addEventListener('click', (e) => { const b = e.target.closest('[data-n]'); if (b && e.detail === 0) digitar(b.dataset.n); });
+  async function digitar(n) {
+    if (ocupado) return;
+    if (n === 'x') pin = pin.slice(0, -1);
+    else if (pin.length < 6) pin += n;
     navigator.vibrate?.(8);
     pontos();
     if (pin.length === 6) {
@@ -61,7 +66,7 @@ export function tecladoPin(alvo, aoCompletar) {
         if (erro && erro.textContent.trim()) { const pp = alvo.querySelector('.pin-pontos'); pp?.classList.remove('errou'); void pp?.offsetWidth; pp?.classList.add('errou'); navigator.vibrate?.([30, 40, 30]); }
       }
     }
-  });
+  }
   return { limpar: () => { pin = ''; pontos(); } };
 }
 
